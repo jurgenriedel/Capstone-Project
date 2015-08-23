@@ -1,0 +1,22 @@
+files <- DirSource(directory = "sample/performance",encoding ="UTF-8" )
+US.Corpus <- VCorpus(x=files)
+US.Corpus <- tm_map(US.Corpus, PlainTextDocument)
+US.Corpus <- tm_map(US.Corpus, content_transformer(tolower)) # Case folding
+US.Corpus <- tm_map(US.Corpus, content_transformer(removeNumbers))
+US.Corpus <- tm_map(US.Corpus, content_transformer(removePunctuation))
+US.Corpus <- tm_map(US.Corpus, function(x) removeWords(x, stopwords("english")))
+profanity.words <- scan("bad-words.txt", "", quiet=TRUE)
+exception.words <- scan("exception.txt", "", quiet=TRUE)
+US.Corpus <- tm_map(US.Corpus, removeWords, profanity.words)
+US.Corpus <- tm_map(US.Corpus, removeWords, exception.words)
+US.Corpus <- Corpus(VectorSource(US.Corpus))
+
+tdm <- TermDocumentMatrix(US.Corpus)
+m <- as.matrix(tdm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+pal <- brewer.pal(9, "BuGn")
+pal <- pal[-(1:2)]
+png("wordcloud.png", width=1000,height=1000, res = 300)
+wordcloud(d$word,d$freq, scale=c(5,.1),min.freq=2,max.words=500, random.order=T, rot.per=.15, colors=pal, vfont=c("sans serif","bold"))
+dev.off()
